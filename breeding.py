@@ -4,8 +4,8 @@
 실행은 python breeding.py
 
 TODO:
-1. fitness.py의 dummy_Cz_list 및 alpha 값 갱신
-2. D 값들이 현재 무작위 값으로 저장되었으므로, 실제 D 값들을 구하여 데이터를 다시 저장
+1. 45m 이상 130m 이하 범위 안의 파란점들을 빨간점의 possible_point_list에 넣기
+2. fitness.py의 alpha 값 결정
 """
 
 import time
@@ -26,7 +26,8 @@ class Generation:
         Generation.cnt += 1
         self.generation_level = Generation.cnt
         self.DNA_list = dna_list
-        self.select_list = self.make_select_list()
+
+        self.make_select_list()
 
     def make_select_list(self):
         """
@@ -37,12 +38,17 @@ class Generation:
         return [dna1, dna1, dna2, dna2, dna2]
         """
 
-        tmp_list = list()
+        self.select_list = []
 
-        for dna in self.DNA_list:
-            tmp_list += [ dna for _ in range(int(dna.fitness)) ]
+        while True:
+            for dna in self.DNA_list:
+                self.select_list += [ dna for _ in range(int(dna.fitness)) ]
 
-        return tmp_list
+            if len(self.select_list) > 1: # 부모로 선택될 염색체가 최소 1개는 있어야됨
+                break
+
+            # 망한 세대라 DNA list 다시 생성
+            self.DNA_list = [ DNA() for _ in range(DNA_NUM) ]
 
     def make_child(self):
         """
@@ -53,7 +59,7 @@ class Generation:
         if rand(0, MUTATION_PROBABILITY ** -1) == 77:
             return DNA()
 
-        # select_list를 이용해 부모를 선택 (부모로 선출될 확률은 fitness 과 비례)
+        # select_list를 이용해 부모를 선택 (부모로 선출될 확률은 fitness에 비례)
         parents = [ self.select_list[rand(0, len(self.select_list))] for _ in range(2) ]
 
         # 교배된 자식 유전자
@@ -87,7 +93,7 @@ class Generation:
         startq = time.time()
         new_dna_list += [ self.make_child() for _ in range(CANDIDATE - GOOD_DNA_CNT) ]
         endq = time.time()
-        # print(f"   Evolution Spent {round(endq - startq, 1)} sec") # 3초정도 걸림
+        print(f"   Evolution Spent {round(endq - startq, 2)} sec")
 
         return Generation(new_dna_list)
 
@@ -110,20 +116,21 @@ class DNA:
         else:
             self.gene_data = gene_data
 
-        self.fitness = get_fitness(self.gene_data)
+        self.fitness = get_fitness(self.gene_data, TIME_TYPE)
 
     def __repr__(self):
         return f"[Gene {round(self.fitness, 2)} | ({', '.join(str(self.gene_data[i]) for i in range(10))} ...)]"
 
 
 USE_CASE_NUM         = 5    # 시설 종류 개수
+TIME_TYPE            = 0    # 시간대 / 0: 새벽, 1: 출근, 2: 점심, 3: 오후, 4: 퇴근, 5: 심야
 CANDIDATE            = 170  # 시설 설치 후보지 개수
 DNA_NUM              = 100  # 유전자 개수
 GOOD_DNA_CNT         = 5    # 우월 유전자 보존 갯수
 MUTATION_PROBABILITY = 0.01 # 돌연변이 확률
 BREED_CNT            = 50   # 교배 반복 횟수
 GRAPH_WIDTH          = 10000
-GRAPH_HEIGHT         = 400  # TODO: Graph Height 정하기
+GRAPH_HEIGHT         = 200  # TODO: Graph Height 정하기
 
 # 진화 방식
 # 0: 우월 유전자 보존시 최고 적합도 유전자를 5개 복사하여 보존
@@ -192,11 +199,11 @@ if __name__ == '__main__':
     data_loader.load_data()
 
     # 조상을 세대 리스트에 추가
-    GENERATION_LIST.append(Generation([ DNA() for _ in range(100) ]))
+    GENERATION_LIST.append(Generation([ DNA() for _ in range(DNA_NUM) ]))
 
     fig = figure()
 
-    l1, = axes(xlim=(0, GRAPH_WIDTH), ylim=(200, GRAPH_HEIGHT)).plot([], [])
+    l1, = axes(xlim=(0, GRAPH_WIDTH), ylim=(0, GRAPH_HEIGHT)).plot([], [])
     ani = FuncAnimation(fig, go_next_generation, fargs=(l1,), interval=50)
 
     show()
