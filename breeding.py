@@ -46,26 +46,30 @@ class Generation:
 
     def make_child(self):
         """
-        2점 교차 방식을 이용해 자식을 만드는 함수
+        지정된 교배 방식을 이용해 자식을 만드는 함수
         """
 
-        # 무작위 확률로 돌연변이 발생
-        if rand(0, self.mean_fitness * MUTATION_PROBABILITY) == 0:
+        # 일정 확률로 돌연변이 발생
+        if rand(0, MUTATION_PROBABILITY ** -1) == 77:
             return DNA()
 
         # select_list를 이용해 부모를 선택 (부모로 선출될 확률은 fitness 과 비례)
         parents = [ self.select_list[rand(0, len(self.select_list))] for _ in range(2) ]
 
-        # 각 교차 포인트를 정한다
-        switch_point = (rand(1, CANDIDATE // 2), rand(CANDIDATE // 2, CANDIDATE))
-
         # 교배된 자식 유전자
-        bred_gene_data = list()
+        bred_gene_data = []
 
-        # 교차 포인트에 다다르면 다른 parent의 유전자 정보를 받아온다
-        bred_gene_data += parents[0].gene_data[0:switch_point[0]]
-        bred_gene_data += parents[1].gene_data[switch_point[0]:switch_point[1]]
-        bred_gene_data += parents[0].gene_data[switch_point[1]:]
+        if CROSS_MODE == 0:
+            # 각 교차 포인트를 정한다
+            switch_point = (rand(1, CANDIDATE // 2), rand(CANDIDATE // 2, CANDIDATE))
+
+            # 교차 포인트에 다다르면 다른 parent의 유전자 정보를 받아온다
+            bred_gene_data += parents[0].gene_data[0:switch_point[0]]
+            bred_gene_data += parents[1].gene_data[switch_point[0]:switch_point[1]]
+            bred_gene_data += parents[0].gene_data[switch_point[1]:]
+        elif CROSS_MODE == 1:
+            for i in range(CANDIDATE):
+                bred_gene_data.append(parents[rand(0, 2)].gene_data[i])
 
         return DNA(bred_gene_data)
 
@@ -112,41 +116,24 @@ class DNA:
         return f"[Gene {round(self.fitness, 2)} | ({', '.join(str(self.gene_data[i]) for i in range(10))} ...)]"
 
 
-# def visualization(generations):
-#     # TODO: 얘 사용하는 함수인지 확인
-
-#     fitness_list = [generation.fitness for generation in generations]
-
-#     # 최대 적합도를 그래프에 나타냄
-#     # max_fitness = DNA.max_fitness()
-#     # plot([max_fitness for _ in range(len(generations))])
-
-#     xlim([0, len(generations)])
-
-#     # TODO: 축의 lim 값을 데이터 보다 높게 잡아줌으로써, 그래프의 가독성을 높임
-#     ylim([int(min(fitness_list)), (1000 * 1.2)])
-
-#     xlabel('Generation')
-#     ylabel('Fitness Score')
-
-#     # 각 세대의 (평균) 적합도를 이용해 그래프에 나타냄
-#     plot([generation.fitness for generation in generations])
-
-#     show()
-
-
 USE_CASE_NUM         = 5    # 시설 종류 개수
 CANDIDATE            = 170  # 시설 설치 후보지 개수
+DNA_NUM              = 100  # 유전자 개수
 GOOD_DNA_CNT         = 5    # 우월 유전자 보존 갯수
-MUTATION_PROBABILITY = 0.1  # 돌연변이 확률 / fitness가 높을수록 돌연변이 확률이 적어짐
+MUTATION_PROBABILITY = 0.01 # 돌연변이 확률
 BREED_CNT            = 50   # 교배 반복 횟수
 GRAPH_WIDTH          = 10000
 GRAPH_HEIGHT         = 400  # TODO: Graph Height 정하기
 
-# 진화 모드
+# 진화 방식
 # 0: 우월 유전자 보존시 최고 적합도 유전자를 5개 복사하여 보존
 # 1: 우월 유전자 보존시 적합도 상위 5개의 유전자를 보존
 EVOLUTION_MODE = 1
+
+# 교배 방식
+# 0: 2점 교차
+# 1: 균등 교차
+CROSS_MODE = 1
 
 # 가장 우월한 DNA
 MAX_FITNESS = -1
