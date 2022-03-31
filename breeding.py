@@ -4,8 +4,7 @@
 실행은 python breeding.py
 
 TODO:
-1. 45m 이상 130m 이하 범위 안의 파란점들을 빨간점의 possible_point_list에 넣기
-2. fitness.py의 alpha 값 결정
+1. fitness.py의 alpha 값 결정
 """
 
 import time
@@ -48,18 +47,20 @@ class Generation:
             if len(self.select_list) > 1: # 부모로 선택될 염색체가 최소 1개는 있어야됨
                 break
 
-            # 망한 세대라 DNA list 다시 생성
+            print("망한 세대라 다시 생성")
             self.DNA_list = [ DNA() for _ in range(DNA_NUM) ]
 
-    def make_child(self, parents):
+    def make_child(self):
         """
         지정된 교배 방식을 이용해 자식을 만드는 함수
-        0.03초 정도 소요
         """
 
         # 일정 확률로 돌연변이 발생
         if rand(0, MUTATION_PROBABILITY ** -1) == 77:
             return DNA()
+
+        # select_list를 이용해 부모를 선택 (부모로 선출될 확률은 fitness에 비례)
+        parents = [ self.select_list[rand(0, len(self.select_list))] for _ in range(2) ]
 
         # 교배된 자식 유전자
         bred_gene_data = []
@@ -90,9 +91,7 @@ class Generation:
         else:
             new_dna_list = sorted_dna_list[0:GOOD_DNA_CNT]
 
-        # select_list를 이용해 부모를 선택 (부모로 선출될 확률은 fitness에 비례)
-        parents = [ self.select_list[rand(0, len(self.select_list))] for _ in range(2) ]
-        new_dna_list += [ self.make_child(parents) for _ in range(DNA_NUM - GOOD_DNA_CNT) ]
+        new_dna_list += [ self.make_child() for _ in range(DNA_NUM - GOOD_DNA_CNT) ]
 
         end = time.time()
         print(f"   Evolution Spent {round(end - start, 2)} sec")
@@ -107,6 +106,10 @@ class Generation:
     @property
     def best_dna(self):
         return sorted(self.DNA_list, key=lambda x: x.fitness, reverse=True)[0]
+
+    @property
+    def fitness_list(self):
+        return sorted([round(dna.fitness, 2) for dna in self.DNA_list], key=lambda x: x, reverse=True)
 
 
 class DNA:
@@ -172,6 +175,7 @@ def go_next_generation(_, l2d):
     # 안내 출력
     print(f"\n==[Generation {next_generation.generation_level}]================================================================================\n" \
             f"  mean fitness : {next_generation.mean_fitness}  |  best fitness : {next_generation.best_dna}\n" \
+            # f"{next_generation.fitness_list}" \
             "================================================================================================\n")
 
     # 그리는 라인(리스트) 에 다음 세대 적합도 추가
