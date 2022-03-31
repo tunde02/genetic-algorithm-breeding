@@ -9,13 +9,14 @@ TODO:
 """
 
 import time
+
 from matplotlib.pyplot import plot, show, xlim, ylim, xlabel, ylabel, figure, axes
 from matplotlib.animation import FuncAnimation
 from collections import deque
 from numpy import mean
 from random import uniform
 
-import data_loader
+from data_loader import load_data
 from fitness import get_fitness
 
 
@@ -50,17 +51,15 @@ class Generation:
             # 망한 세대라 DNA list 다시 생성
             self.DNA_list = [ DNA() for _ in range(DNA_NUM) ]
 
-    def make_child(self):
+    def make_child(self, parents):
         """
         지정된 교배 방식을 이용해 자식을 만드는 함수
+        0.03초 정도 소요
         """
 
         # 일정 확률로 돌연변이 발생
         if rand(0, MUTATION_PROBABILITY ** -1) == 77:
             return DNA()
-
-        # select_list를 이용해 부모를 선택 (부모로 선출될 확률은 fitness에 비례)
-        parents = [ self.select_list[rand(0, len(self.select_list))] for _ in range(2) ]
 
         # 교배된 자식 유전자
         bred_gene_data = []
@@ -81,6 +80,7 @@ class Generation:
 
     def evolution(self):
         print(f"   Start Evolution... (From Generation {self.generation_level})")
+        start = time.time()
 
         sorted_dna_list = sorted(self.DNA_list, key=lambda x: x.fitness, reverse=True)
         new_dna_list = list()
@@ -90,10 +90,12 @@ class Generation:
         else:
             new_dna_list = sorted_dna_list[0:GOOD_DNA_CNT]
 
-        startq = time.time()
-        new_dna_list += [ self.make_child() for _ in range(CANDIDATE - GOOD_DNA_CNT) ]
-        endq = time.time()
-        print(f"   Evolution Spent {round(endq - startq, 2)} sec")
+        # select_list를 이용해 부모를 선택 (부모로 선출될 확률은 fitness에 비례)
+        parents = [ self.select_list[rand(0, len(self.select_list))] for _ in range(2) ]
+        new_dna_list += [ self.make_child(parents) for _ in range(DNA_NUM - GOOD_DNA_CNT) ]
+
+        end = time.time()
+        print(f"   Evolution Spent {round(end - start, 2)} sec")
 
         return Generation(new_dna_list)
 
@@ -125,7 +127,7 @@ class DNA:
 USE_CASE_NUM         = 5    # 시설 종류 개수
 TIME_TYPE            = 0    # 시간대 / 0: 새벽, 1: 출근, 2: 점심, 3: 오후, 4: 퇴근, 5: 심야
 CANDIDATE            = 170  # 시설 설치 후보지 개수
-DNA_NUM              = 100  # 유전자 개수
+DNA_NUM              = 50   # 유전자 개수
 GOOD_DNA_CNT         = 5    # 우월 유전자 보존 갯수
 MUTATION_PROBABILITY = 0.01 # 돌연변이 확률
 BREED_CNT            = 50   # 교배 반복 횟수
@@ -196,7 +198,7 @@ def go_next_generation(_, l2d):
 
 if __name__ == '__main__':
     # 필요한 데이터 로드
-    data_loader.load_data()
+    load_data()
 
     # 조상을 세대 리스트에 추가
     GENERATION_LIST.append(Generation([ DNA() for _ in range(DNA_NUM) ]))
