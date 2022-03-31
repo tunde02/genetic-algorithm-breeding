@@ -35,13 +35,13 @@ class RedPoint(Point):
 def load_data():
     start = time.time()
 
-    with open('./point_list.p', 'rb') as f:
+    with open('./data/point_list.p', 'rb') as f:
         for _ in range(TOTAL_POINT_NUM):
             point_list.append(pickle.load(f))
 
     print(f"> Complete Load \"point_list\" ({round(time.time() - start, 2)} sec)")
 
-    with open('./red_point_list.p', 'rb') as f:
+    with open('./data/red_point_list.p', 'rb') as f:
         for _ in range(RED_POINT_NUM):
             red_point_list.append(pickle.load(f))
 
