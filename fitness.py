@@ -4,7 +4,8 @@ from data_loader import red_point_list
 
 w_list = [0.2331, 0.2646, 0.1323, 0.2072, 0.1628]
 Cz_list = [45, 130, 37, 11, 45]
-alpha = 0.05 # TODO
+ALPHA = 0.0005 # TODO
+BUS_WEIGHT = 2.3 # TODO
 
 
 def get_fitness(gene_data, time_type):
@@ -13,14 +14,23 @@ def get_fitness(gene_data, time_type):
 
     for i in range(170):
         use_case = gene_data[i]
+        bus_weight = 1
 
         if use_case == -1:
             continue
 
+        point_info_list = red_point_list[i].possible_point_list[:]
+        if use_case == 1: # 버스일 경우 far_point_list 추가
+            point_info_list += red_point_list[i].far_point_list[:]
+            bus_weight = BUS_WEIGHT
+
         total_D = 0
-        expected_time_list = []
-        for point_info in red_point_list[i].possible_point_list:
-            point_object = point_info['point_object']
+        car_expected_time_list = []
+        walk_expected_time_list = []
+        for point_info in point_info_list:
+            index = point_info['point_index'] - 1
+            isRoad = point_info['isRoad']
+            D_list = point_info['D_list']
             distance = point_info['distance']
             expected_time = point_info['expected_time']
 
@@ -28,16 +38,19 @@ def get_fitness(gene_data, time_type):
             if distance > Cz_list[use_case] + 1: # 오차범위 1m
                 continue
 
-            # 현재 파란점이 이미 "use_case"시설에 대해 계산되었다면 넘어감
-            if is_calculated_list[point_object.point_index - 1][use_case]:
-                continue
+            if expected_time != -1: # use_case가 1일 경우 소요시간 무시
+                if isRoad:
+                    car_expected_time_list.append(expected_time)
+                else:
+                    walk_expected_time_list.append(expected_time)
 
-            total_D += point_object.D_list[time_type][use_case]
-            if expected_time != -1:
-                expected_time_list.append(expected_time)
+            # use_case에 대해 계산된 적 없는 파란점일 때만 total_D에 추가
+            if not is_calculated_list[index][use_case]:
+                total_D += D_list[time_type][use_case]
 
-            is_calculated_list[point_object.point_index - 1][use_case] = True
+                is_calculated_list[index][use_case] = True
 
-        total_fitness += w_list[use_case] * (total_D - mean(expected_time_list) * alpha)
+        A = mean(car_expected_time_list) * mean(walk_expected_time_list) * ALPHA * bus_weight
+        total_fitness += w_list[use_case] * (total_D - A)
 
     return total_fitness
