@@ -26,10 +26,11 @@ class Point:
 
 
 class RedPoint(Point):
-    def __init__(self, point_index, x, y, isRoad, D_list, distance_list, possible_point_list):
+    def __init__(self, point_index, x, y, isRoad, D_list, distance_list, possible_point_list, far_point_list):
         super().__init__(point_index, x, y, isRoad, D_list, distance_list)
         # self.red_point_index = red_point_index
         self.possible_point_list = possible_point_list
+        self.far_point_list = far_point_list
 
 
 def load_data():
